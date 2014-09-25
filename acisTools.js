@@ -6,6 +6,7 @@ exports.acisGridOptions = function (input) {
 	var options = {
 		method: 'POST',
 		url: urlBase+method,
+		withCredentials: false,
 		headers: {
 			'Content-Type': 'application/json'
 		},
