@@ -1,11 +1,13 @@
 var request = require('request');
+var pack    = require('ndarray-pack');
 
 exports.acisGridOptions = function (input) {
-	urlBase = 'http://data.rcc-acis.org/'
-	method = 'GridData'
+	var urlBase = 'http://data.rcc-acis.org/'
+	var method = 'GridData'
 	var options = {
 		method: 'POST',
 		url: urlBase+method,
+		withCredentials: false,
 		headers: {
 			'Content-Type': 'application/json'
 		},
@@ -26,34 +28,15 @@ exports.acisGridQuery = function (options,callback) {
 }
 
 exports.handle_data = function (d,i) {
-	this_date = d.data[i][0];
-	this_lat  = d.meta.lat;
-	this_lon  = d.meta.lon;
-	this_data = d.data[i][1];
-	// flatten arrays
-	this_lat_flat = [];
-	this_lat_flat = this_lat_flat.concat.apply(this_lat_flat,this_lat);
-	this_lon_flat = [];
-	this_lon_flat = this_lon_flat.concat.apply(this_lon_flat,this_lon);
-	this_data_flat = [];
-	this_data_flat = this_data_flat.concat.apply(this_data_flat,this_data);
-	// create GeoJSON
-	var gridData = {};
-	gridData.type = 'FeatureCollection';
-	gridData.features = [];
-	for (var i = 0; i < this_data_flat.length; i++) {
-		id = i + 1;
-		thisGrid = {};
-		thisGrid.type = 'Feature';
-		thisGrid.id = id.toString();
-		thisGrid.properties = {};
-		thisGrid.properties.name = 'grid'+thisGrid.id;
-		thisGrid.properties.data = parseInt(this_data_flat[i]);
-		thisGrid.geometry = {};
-		thisGrid.geometry.type = 'Point';
-		thisGrid.geometry.coordinates = [parseFloat(this_lon_flat[i]),parseFloat(this_lat_flat[i])];
-		gridData.features.push(thisGrid);
-	}
-	return gridData;
+	// pack the data into an ndarray (pack)
+	var this_date = d.data[i][0];
+	var this_lat  = pack(d.meta.lat);
+	var this_lon  = pack(d.meta.lon);
+	var this_data = pack(d.data[i][1]);
+	return {
+		lat: this_lat,
+		lon: this_lon,
+		data: this_data
+	};
 }
 

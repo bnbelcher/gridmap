@@ -1,16 +1,21 @@
 {
-  "name": "climate-map",
-  "version": "0.0.0",
-  "description": "mapping climate data with acis and browserify",
+  "name": "gridmap",
+  "version": "0.0.1",
+  "description": "Transform a binary array of data into a visual map in the browser",
   "main": "app.js",
   "scripts": {
     "start": "beefy app.js:bundle.js --live",
     "bundle": "browserify app.js -o bundle.js"
   },
-  "author": "",
+  "author": "Northeast Regional Climate Center",
   "license": "MIT",
   "dependencies": {
-    "leaflet": "~0.7.2"
+    "conrec": "jasondavies/conrec.js",
+    "leaflet": "~0.7.2",
+    "ndarray-ops": "~1.2.2",
+    "ndarray-pack": "~1.1.1",
+    "ndarray-unpack": "~1.0.0",
+    "request": "~2.40.0"
   },
   "devDependencies": {
     "beefy": "^2.1.1",
