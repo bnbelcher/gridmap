@@ -144,14 +144,23 @@ module.exports = function (args) {
 		var minValue = ops.inf(grid.data.hi(bnds[1]+1,bnds[3]+1).lo(bnds[0],bnds[2]));
 
 		// contour interval
-		var step = parseInt((maxValue-minValue)/(cnum+1));
+		var step = (maxValue-minValue)/(cnum+1);
 
 		// calculate contour levels
 		var clevs = [];
+		var smallNum = 1e-3;
 		var thisLev = minValue;
 		for (var i=0; i<cnum; ++i) {
 			thisLev += step;
-			clevs.push(thisLev);
+			if ((thisLev % 1) == 0) {
+				// if contour level is an integer, add a small number so that contour
+				// level != any grid values. Using conrec method, if a contour level and some
+				// grid values are the same, the contour data paths tend to wrap around
+				// each grid with those values.
+				clevs.push(thisLev+smallNum);
+			} else {
+				clevs.push(thisLev);
+			}
 		}
 
 		// calculate contour data paths for these contour levels
