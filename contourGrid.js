@@ -19,8 +19,9 @@ module.exports = function (args) {
 		return false;
 	}
 
-	// find visible indices of grid array
 	function getIndexBounds() {
+		// find visible indices of grid array
+
 		// current map bounds
 		var bounds = map.getBounds();
 		var latS_m = bounds._southWest.lat
@@ -124,11 +125,12 @@ module.exports = function (args) {
 		return [idxS,idxN,idxW,idxE];
 	}
 
-	// calculate contour data paths from appropriate contour levels for this grid of data
-	// 1. calculate contour levels based on provided data
-	// 2. determine contour data paths based on these contour levels. Later, these data paths
-	//	are used to construct geojson.
 	function getContours (cnum) {
+		// calculate contour data paths from appropriate contour levels for this grid of data
+		// 1. calculate contour levels based on provided data
+		// 2. determine contour data paths based on these contour levels. Other tools use these
+		//	data paths to construct geojson.
+
 		// find visible indices of grid array
 		var bnds = getIndexBounds();
 
@@ -152,15 +154,17 @@ module.exports = function (args) {
 		var thisLev = minValue;
 		for (var i=0; i<cnum; ++i) {
 			thisLev += step;
-			if ((thisLev % 1) == 0) {
-				// if contour level is an integer, add a small number so that contour
-				// level != any grid values. Using conrec method, if a contour level and some
-				// grid values are the same, the contour data paths tend to wrap around
-				// each grid with those values.
-				clevs.push(thisLev+smallNum);
-			} else {
-				clevs.push(thisLev);
-			}
+			// if contour level is an integer, add a small number so that contour
+			// level != any grid values. Using conrec method, if a contour level and some
+			// grid values are the same, the contour data paths tend to wrap around
+			// each grid with those values.
+			//if ((thisLev % 1) == 0) {
+			//	clevs.push(thisLev+smallNum);
+			//} else {
+			//	clevs.push(thisLev);
+			//}
+			// ... staying with unmodified level value for now
+			clevs.push(thisLev);
 		}
 
 		// calculate contour data paths for these contour levels
@@ -182,8 +186,8 @@ module.exports = function (args) {
 		return output
 	}
 
-	// create geojson from contour data paths
 	function contoursToGeojson(cList) {
+		// create geojson from contour data paths
 		var g = {}
 		g["type"] = "FeatureCollection"
 		g["features"] = []
@@ -203,8 +207,6 @@ module.exports = function (args) {
 				"data": c.level
 			}
 			thisIso["geometry"] = {
-				//"type": "MultiPolygon",
-				//"coordinates": [[coords]]
 				"type": "LineString",
 				"coordinates": coords
 			}
@@ -214,11 +216,35 @@ module.exports = function (args) {
 		return g
 	}
 
+	function contourLabels(cList) {
+		// handle contour labels
+		// 1) clears any currently displayed contour labels,
+		// 2) create new labels based on current contour levels,
+		//    - labels are placed at the starting point of each contour path.
+		// 3) add layer of new labels to map 
+		cLabels.clearLayers();
+		var cidx = 0
+		cList.forEach( function(c) {
+			var label = L.marker([c[0].x,c[0].y],{
+				icon: L.divIcon({
+					className: 'contour-label',
+					html: c.level,
+					//iconSize: [30,10]
+				})
+			});
+			cLabels.addLayer(label);
+		})
+		cLabels.addTo(map);
+
+		return false
+	}
+
 	function style(feature) {
+		// styles for contour lines
 		return {
 			color: 'black',
 			weight: 2,
-			opacity: 0.7
+			opacity: 1.0
 		};
 	}
 
@@ -233,6 +259,7 @@ module.exports = function (args) {
 		if (!L.Browser.ie && !L.Browser.opera) {
 			layer.bringToFront();
 		}
+
 	}
 
 	function resetHighlight(e) {
@@ -241,7 +268,7 @@ module.exports = function (args) {
 		layer.setStyle({
 			weight: 2,
 			color: 'black',
-			opacity: 0.7
+			opacity: 1.0
 		});
 
 		if (!L.Browser.ie && !L.Browser.opera) {
@@ -256,21 +283,27 @@ module.exports = function (args) {
 		});
 	}
 
+	// create contour data paths, create geojson, and display contour lines
 	var cList = getContours(numLevels);
-	var isolines = contoursToGeojson(cList)
+	var isolines = contoursToGeojson(cList);
 	var geojson = L.geoJson(isolines, {
 		onEachFeature: onEachFeature
 	});
-	geojson.setStyle(style);
 	geojson.addTo(map);
+	geojson.setStyle(style);
+
+	// create and display contour labels on map
+	var cLabels = new L.FeatureGroup();
+	contourLabels(cList);
 
 	// update contours after map is moved - new contours are based on visible data
 	map.on('moveend', function() {
 		var cList = getContours(numLevels);
-		var isolines = contoursToGeojson(cList)
+		var isolines = contoursToGeojson(cList);
 		geojson.clearLayers();
 		geojson.addData(isolines);
 		geojson.setStyle(style);
+		contourLabels(cList);
 	});
 
 };
