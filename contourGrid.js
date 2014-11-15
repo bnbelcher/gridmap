@@ -11,12 +11,24 @@ module.exports = function (args) {
 	// missing value - used for indices if no data is in visible window
 	miss = -999
 
-	// function tests if object is in a list
 	function contains(obj, list) {
+		// function tests if object is in a list
 		for (var i=0; i<list.length; i++) {
 			if (list[i] === obj) { return true }
 		}
 		return false;
+	}
+
+	function handleMissingData() {
+		// replace missing data in grid with NaN.
+		// This causes areas without data to be appropriately ignored when contouring.
+		if (contains(miss,grid.data.data)) {
+			for (var i=0; i<grid.data.shape[0]; i++) {
+				for (var j=0; j<grid.data.shape[1]; j++) {
+					if (grid.data.get(i,j)==miss) { grid.data.set(i,j,NaN) }
+				}
+			}
+		}
 	}
 
 	function getIndexBounds() {
@@ -282,6 +294,10 @@ module.exports = function (args) {
 			mouseout: resetHighlight,
 		});
 	}
+
+	// replace missing data in grid with NaN.
+	// This causes areas without data to be appropriately ignored when contouring.
+	handleMissingData()
 
 	// create contour data paths, create geojson, and display contour lines
 	var cList = getContours(numLevels);
